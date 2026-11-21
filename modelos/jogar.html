@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Magic Block - modelos</title>
+  <style>
+    @font-face {
+      font-family: 'Fredoka';
+      src: url('../src/ui/fontes/fredoka-latin-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-display: block;
+    }
+    html, body { margin: 0; height: 100%; background: #0c0619; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+    body { display: flex; flex-direction: column; font-family: 'Fredoka', system-ui, sans-serif; }
+    #barra { flex: 0 0 auto; display: flex; gap: 6px; align-items: center; padding: 6px 8px; background: rgba(10, 8, 20, 0.92); color: #fff; font-size: 13px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+    #barra::-webkit-scrollbar { display: none; }
+    #barra button, #barra select { font: inherit; color: #fff; background: #2a2440; border: 1px solid #4b4170; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
+    #barra button[aria-selected="true"] { background: #f4e9ff; color: #1d1236; border-color: #fff; }
+    #barra .sep { flex: 1 1 auto; }
+    #barra a { color: #cdbcff; text-decoration: none; padding: 0 4px; }
+    #palco { position: relative; flex: 1 1 auto; min-height: 0; }
+    canvas { position: absolute; inset: 0; display: block; touch-action: none; }
+    body.limpo #barra { display: none; }
+  </style>
+</head>
+<body>
+  <nav id="barra" role="tablist" aria-label="Modelos"></nav>
+  <div id="palco"><canvas id="tela"></canvas></div>
+  <pre id="filme" hidden></pre>
+  <pre id="erros" hidden></pre>
+  <script>
+    // erros de JS ficam visiveis para as ferramentas (--dump-dom) e no titulo
+    (function () {
+      var anotar = function (m) { var p = document.getElementById('erros'); p.textContent += m + '\n'; document.title = 'ERRO ' + m; };
+      window.addEventListener('error', function (e) { anotar((e.message || 'erro') + ' @' + (e.filename || '') + ':' + (e.lineno || 0)); });
+      window.addEventListener('unhandledrejection', function (e) { anotar('promessa: ' + (e.reason && e.reason.message || e.reason)); });
+    })();
+  </script>
+  <script type="module" src="jogar.js"></script>
+</body>
+</html>

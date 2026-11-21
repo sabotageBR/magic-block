@@ -1,0 +1,112 @@
+/* Magic Block: a interface em DOM (pausa, menus e fim de jogo). O jogo em si e o canvas. */
+@font-face {
+  font-family: 'Fredoka';
+  src: url('fontes/fredoka-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-display: block;
+}
+:root {
+  --fundo: #05061a;
+  --painel: rgba(13, 16, 48, 0.94);
+  --borda: #7fa8ff;
+  --texto: #ffffff;
+  --suave: #b9c6ff;
+  --ouro: #ffd54a;
+  --forte: #5b6cff;
+  --forte2: #a77bff;
+  --premio: #ffcf5a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; height: 100%; overflow: hidden; background: var(--fundo); color: var(--texto);
+  font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', sans-serif; font-weight: 700;
+  touch-action: none; -webkit-user-select: none; user-select: none; overscroll-behavior: none;
+}
+#palco {
+  position: fixed;
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+#tela { position: absolute; inset: 0; display: block; touch-action: none; }
+
+/* carregando */
+#carregando {
+  position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 28px; background: radial-gradient(circle at 50% 40%, #241460, var(--fundo) 70%);
+}
+#carregando .logo { font-size: 44px; letter-spacing: 0.02em; text-shadow: 0 0 18px rgba(127, 168, 255, 0.7); }
+#carregando .logo b { color: var(--ouro); }
+#carregando .giro { display: grid; grid-template-columns: repeat(2, 18px); gap: 6px; animation: girar 1.4s linear infinite; }
+#carregando .giro i { width: 18px; height: 18px; border-radius: 5px; background: var(--borda); box-shadow: 0 0 10px var(--borda); }
+#carregando .giro i:nth-child(2) { background: #ff6ad5; box-shadow: 0 0 10px #ff6ad5; }
+#carregando .giro i:nth-child(3) { background: #3ff0c8; box-shadow: 0 0 10px #3ff0c8; }
+#carregando .giro i:nth-child(4) { background: var(--ouro); box-shadow: 0 0 10px var(--ouro); }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* botao de pausa (posicionado pelo main.js no lugar que o layout reservou) */
+.redondo {
+  position: fixed; z-index: 10; width: 46px; height: 46px; border-radius: 50%; padding: 0; cursor: pointer;
+  display: grid; place-items: center; color: var(--texto);
+  background: rgba(20, 24, 70, 0.7); border: 2px solid rgba(143, 182, 255, 0.55);
+  box-shadow: 0 0 14px rgba(120, 140, 255, 0.35);
+}
+.redondo svg { width: 52%; height: 52%; fill: currentColor; }
+.redondo:active { transform: scale(0.94); }
+body.semhud #btnPausa { display: none; }
+
+/* camadas de menu */
+.camada-ui {
+  position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top, 0px)); padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  background: rgba(3, 4, 15, 0.45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  animation: entrar 0.22s ease-out;
+}
+.camada-ui[hidden] { display: none; }
+@keyframes entrar { from { opacity: 0; transform: translateY(14px) scale(0.97); } }
+.painel {
+  width: min(360px, 100%); max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  padding: 22px 20px; border-radius: 26px; background: var(--painel); border: 2px solid rgba(127, 168, 255, 0.55);
+  box-shadow: 0 0 40px rgba(110, 90, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12); text-align: center;
+}
+.painel h2 { margin: 0 0 4px; font-size: 30px; letter-spacing: 0.01em; text-shadow: 0 0 14px rgba(127, 168, 255, 0.6); }
+.botao {
+  font: inherit; font-size: 20px; color: var(--texto); cursor: pointer; border-radius: 16px; padding: 14px 18px; min-height: 54px;
+  background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(185, 198, 255, 0.35);
+}
+.botao.forte { background: linear-gradient(180deg, var(--forte), #4253e0); border-color: #9fb0ff; box-shadow: 0 6px 0 #2c37a8; }
+.botao.forte:active { transform: translateY(3px); box-shadow: 0 3px 0 #2c37a8; }
+.botao.premio {
+  display: flex; align-items: center; gap: 12px; text-align: left; color: #2a1b00;
+  background: linear-gradient(180deg, #ffe08a, var(--premio)); border-color: #fff1c4; box-shadow: 0 6px 0 #b8861d;
+}
+.botao.premio svg { width: 34px; height: 34px; flex: none; fill: none; stroke: #2a1b00; stroke-width: 2; }
+.botao.premio svg path { fill: #2a1b00; stroke: none; }
+.botao.premio span { display: flex; flex-direction: column; gap: 2px; }
+.botao.premio small { font-size: 13px; font-weight: 700; opacity: 0.8; }
+.botao.premio:disabled { opacity: 0.6; }
+.botao:focus-visible, .chave:focus-visible, .redondo:focus-visible { outline: 3px solid var(--ouro); outline-offset: 2px; }
+.chaves { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.chave {
+  font: inherit; font-size: 17px; color: var(--texto); cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(185, 198, 255, 0.2);
+}
+.chave b { width: 46px; height: 26px; border-radius: 13px; background: rgba(255, 255, 255, 0.18); position: relative; transition: background 0.15s; }
+.chave b::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left 0.15s; }
+.chave[aria-pressed="true"] b { background: #3ff0c8; }
+.chave[aria-pressed="true"] b::after { left: 23px; }
+.chave[hidden] { display: none; }
+.ajuda { margin: 4px 0 0; font-size: 14px; line-height: 1.4; color: var(--suave); font-weight: 600; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+body.toque .ajuda.teclado { display: none; }
+.placar { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 6px; }
+.placar .rotulo { font-size: 15px; color: var(--suave); letter-spacing: 0.06em; text-transform: uppercase; }
+.placar > b { font-size: 58px; line-height: 1.05; text-shadow: 0 0 18px rgba(127, 168, 255, 0.7); font-variant-numeric: tabular-nums; }
+.placar .recorde { display: flex; align-items: center; gap: 6px; font-size: 20px; color: var(--suave); }
+.placar .recorde svg { width: 24px; height: 18px; fill: var(--ouro); }
+.placar .novo { margin-top: 6px; color: var(--ouro); font-size: 20px; animation: pulsar 0.9s ease-in-out infinite alternate; }
+.placar .novo[hidden] { display: none; }
+@keyframes pulsar { to { transform: scale(1.08); text-shadow: 0 0 14px var(--ouro); } }
+.aviso { margin: 0; font-size: 14px; color: var(--suave); }
+#debug { position: fixed; left: 4px; bottom: 4px; z-index: 40; font: 11px monospace; color: #9f9; background: rgba(0, 0, 0, 0.6); padding: 2px 4px; }
+@media (prefers-reduced-motion: reduce) {
+  .camada-ui, #carregando .giro, .placar .novo { animation: none; }
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Magic Block</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="src/ui/estilo.css">
+<!-- californiagames.io: a PlataformaSDK, servida pelo portal na origem dos jogos (nao vai no build). -->
+<script src="/sdk/v1/plataforma-sdk.js"></script>
+</head>
+<body>
+<div id="carregando" role="status" aria-label="Magic Block">
+  <div class="logo">Magic <b>Block</b></div>
+  <div class="giro"><i></i><i></i><i></i><i></i></div>
+</div>
+<div id="palco"><canvas id="tela"></canvas></div>
+<button id="btnPausa" class="redondo" type="button" aria-label="Pausar" title="Pausar">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.5"/><rect x="13.5" y="5" width="4" height="14" rx="1.5"/></svg>
+</button>
+
+<div id="menu" class="camada-ui" hidden>
+  <div class="painel" role="dialog" aria-modal="true" aria-labelledby="menuTitulo">
+    <h2 id="menuTitulo" data-t="pausa">Pausa</h2>
+    <button id="btnContinuar" class="botao forte" type="button" data-t="continuar">Continuar</button>
+    <button id="btnRecomecar" class="botao" type="button" data-t="recomecar">Recomeçar</button>
+    <div class="chaves">
+      <button id="btnEfeitos" class="chave" type="button" aria-pressed="true"><span data-t="efeitos">Efeitos</span><b></b></button>
+      <button id="btnMusica" class="chave" type="button" aria-pressed="true"><span data-t="musica">Música</span><b></b></button>
+      <button id="btnVibracao" class="chave" type="button" aria-pressed="true"><span data-t="vibracao">Vibração</span><b></b></button>
+    </div>
+    <p class="ajuda" data-t="ajuda"></p>
+    <p class="ajuda teclado" data-t="teclado"></p>
+  </div>
+</div>
+
+<div id="fim" class="camada-ui" hidden>
+  <div class="painel" role="dialog" aria-modal="true" aria-labelledby="fimTitulo">
+    <h2 id="fimTitulo" data-t="semEspaco">Sem espaço!</h2>
+    <div class="placar">
+      <span class="rotulo" data-t="pontos">Pontos</span>
+      <b id="fimPontos">0</b>
+      <span class="recorde"><svg viewBox="0 0 24 18" aria-hidden="true"><path d="M1 17V5l6 5 5-9 5 9 6-5v12z"/></svg><span id="fimRecorde">0</span></span>
+      <span id="fimNovo" class="novo" data-t="novoRecorde" hidden>Novo recorde!</span>
+    </div>
+    <button id="btnReviver" class="botao premio" type="button" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M10 9.2v5.6l4.8-2.8z"/></svg>
+      <span><b data-t="reviver">Reviver</b><small data-t="reviverDica"></small></span>
+    </button>
+    <p id="fimAviso" class="aviso" hidden></p>
+    <button id="btnDeNovo" class="botao forte" type="button" data-t="jogarDeNovo">Jogar de novo</button>
+  </div>
+</div>
+<div id="debug" hidden></div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

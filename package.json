@@ -1,0 +1,30 @@
+{
+  "name": "magic-block",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Magic Block: quebra-cabeca de blocos no espaco (encaixar pecas, girar com um toque, limpar linhas e colunas, estrelas cadentes valem x2) em HTML + JavaScript puro, para o californiagames.io e a Y8.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "servir": "node tools/servir.mjs",
+    "lan": "node tools/servir.mjs --lan",
+    "sons": "node tools/sons.mjs",
+    "empacotar": "npm test && node tools/empacotar.mjs",
+    "empacotar:y8": "npm test && node tools/empacotar.mjs --alvo=y8",
+    "provar:y8": "node tools/provar-y8.mjs",
+    "midias": "node tools/midias.mjs",
+    "medir": "node tools/medir-modelos.mjs 100 --json",
+    "prints": "node tools/prints-modelos.mjs",
+    "gifs": "node tools/gif-modelos.mjs",
+    "modelos": "npm run medir && npm run prints && npm run gifs",
+    "artifact": "node tools/artifact-modelos.mjs"
+  },
+  "kit": {
+    "ids": {
+      "y8": {
+        "appId": "6b00df8e57cef42fd622e50c",
+        "gameId": "294577"
+      }
+    }
+  }
+}

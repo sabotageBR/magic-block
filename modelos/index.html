@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Modelos do Magic Block</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  @font-face {
+    font-family: 'Fredoka';
+    src: url('../src/ui/fontes/fredoka-latin-700-normal.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+  /* Layout: uma coluna de leitura; fichas em grade que vira pilha no celular (video ao lado do titulo). */
+  :root {
+    --bg: #f5f2fa;
+    --surface: #ffffff;
+    --line: #e2dcee;
+    --fg: #1d1830;
+    --muted: #615a77;
+    --accent: #8a5a00;
+    --accent-bg: #fff1cc;
+    --ok: #1f7a4d;
+    --risk: #a3392b;
+    --display: 'Fredoka', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+    --body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #13101d; --surface: #1c1829; --line: #2f2944; --fg: #f2eefa; --muted: #a59dbb;
+      --accent: #ffd166; --accent-bg: #3a2f12; --ok: #6fdba0; --risk: #ff8f7e; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #13101d; --surface: #1c1829; --line: #2f2944; --fg: #f2eefa; --muted: #a59dbb;
+    --accent: #ffd166; --accent-bg: #3a2f12; --ok: #6fdba0; --risk: #ff8f7e; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.15; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 6vw, 46px); }
+  h2 { font-size: 24px; }
+  h3 { font-size: 21px; }
+  p { margin: 0; }
+  .leve { color: var(--muted); }
+  .intro { display: flex; flex-direction: column; gap: 12px; max-width: 70ch; }
+  .rotulo { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .faixa { overflow-x: auto; border-radius: 14px; border: 1px solid var(--line); background: #0d0a16; }
+  .faixa img { display: block; max-width: none; height: min(52vh, 420px); width: auto; }
+  .passos { display: grid; gap: 8px; padding-left: 20px; margin: 0; max-width: 70ch; }
+  kbd { font: 12px/1 var(--body); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 2px 5px; background: var(--surface); }
+  code { font-size: 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+
+  .fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 18px; }
+  .ficha {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px;
+    display: grid; grid-template-columns: 150px minmax(0, 1fr); grid-template-areas: "midia cabeca" "midia corpo"; gap: 4px 16px;
+  }
+  .midia { grid-area: midia; display: flex; flex-direction: column; gap: 6px; }
+  .midia video { width: 150px; max-width: 100%; aspect-ratio: 320 / 692; border-radius: 12px; display: block; background: #0d0a16; object-fit: cover; }
+  .cabeca { grid-area: cabeca; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .corpo { grid-area: corpo; display: flex; flex-direction: column; gap: 10px; min-width: 0; padding-top: 8px; }
+  .num { font-family: var(--display); color: var(--accent); font-size: 15px; }
+  .mec { display: inline-flex; align-self: flex-start; font-weight: 600; font-size: 13px; color: var(--accent); background: var(--accent-bg); border-radius: 999px; padding: 3px 10px; }
+  .item { display: grid; gap: 2px; }
+  .item b { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .favor b { color: var(--ok); }
+  .risco b { color: var(--risk); }
+  .medido { font-variant-numeric: tabular-nums; font-size: 14px; }
+  .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .botao {
+    font: 600 14px/1 var(--body); display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--fg); text-decoration: none; cursor: pointer;
+  }
+  .botao.forte { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .botao:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  details .telas { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  details .telas img { border-radius: 10px; border: 1px solid var(--line); width: 100%; }
+  @media (max-width: 560px) {
+    .ficha { grid-template-columns: 112px minmax(0, 1fr); grid-template-areas: "midia cabeca" "corpo corpo"; }
+    .midia video { width: 112px; }
+    h3 { font-size: 19px; }
+  }
+
+  .bloco { display: flex; flex-direction: column; gap: 14px; }
+  .combinar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .combinar label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  select { font: 15px var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .tabela { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-variant-numeric: tabular-nums; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.n { text-align: right; }
+  .lista { display: grid; gap: 8px; padding-left: 20px; margin: 0; max-width: 72ch; }
+  .reco { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+  .reco > div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+  .reco .primeira { border-color: var(--accent); }
+  .copiado { color: var(--ok); font-size: 13px; min-height: 1em; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header class="intro">
+    <span class="rotulo">Magic Block · rodada de modelos</span>
+    <h1>Seis modelos para escolher</h1>
+    <p>Todos usam o mesmo núcleo de quebra-cabeça de blocos: bandeja com 3 peças, arrastar e encaixar, linha ou coluna cheia limpa, sequência de limpezas multiplica os pontos, fim quando nenhuma peça cabe. Cada modelo junta um tema visual a uma mecânica extra que muda a jogada. Todos são jogáveis.</p>
+  </header>
+
+  <section class="bloco" aria-label="Comparação lado a lado">
+    <div class="faixa"><img src="prints/folha-retrato.jpg" alt="Os 6 modelos em retrato, lado a lado: Runas Arcanas, Jardim Zen, Doceria, Neon Arcade, Galáxia e Recife" width="1800" height="650"></div>
+    <ol class="passos">
+      <li><b>Jogar</b> abre o protótipo no tema da ficha. Lá dentro, <kbd>1</kbd> a <kbd>6</kbd> trocam o modelo, <kbd>R</kbd> recomeça e <kbd>A</kbd> liga o bot.</li>
+      <li>No celular, arraste a peça: ela sobe acima do dedo, o fantasma mostra onde cai e as linhas que vão sumir acendem na cor da peça.</li>
+      <li>Tema e mecânica são independentes. Em <a href="#combinar">Combinar</a> dá para testar, por exemplo, a Doceria com o Orbe de mana.</li>
+    </ol>
+  </section>
+
+  <section class="bloco" aria-labelledby="t-fichas">
+    <h2 id="t-fichas">As fichas</h2>
+    <div class="fichas" id="fichas"></div>
+  </section>
+
+  <section class="bloco" id="combinar" aria-labelledby="t-combinar">
+    <h2 id="t-combinar">Combinar tema e mecânica</h2>
+    <div class="combinar">
+      <label for="sel-tema">Tema <select id="sel-tema"></select></label>
+      <label for="sel-mec">Mecânica <select id="sel-mec"></select></label>
+      <a class="botao forte" id="jogar-comb" href="jogar.html">Jogar a combinação</a>
+      <button class="botao" type="button" id="copiar-comb">Copiar escolha</button>
+      <span class="copiado" id="ok-comb" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section class="bloco" aria-labelledby="t-medido">
+    <h2 id="t-medido">Medição com o bot</h2>
+    <p class="leve" id="medido-nota">O bot jogou cada mecânica direto no núcleo, sem navegador. "Bom" joga o melhor que sabe; "médio" erra como uma pessoa distraída. Os minutos supõem 3,2 s por jogada.</p>
+    <div class="tabela">
+      <table>
+        <thead><tr><th>Mecânica</th><th>Jogadas (bom)</th><th>Min (bom)</th><th>Jogadas (médio)</th><th>Min (médio)</th><th>Limpa (médio)</th><th>Extra por partida (bom)</th></tr></thead>
+        <tbody id="tabela-medidas"><tr><td colspan="7" class="leve">Abra pelo servidor local (<code>npm run servir</code>) para ver os números.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="bloco" aria-labelledby="t-reco">
+    <h2 id="t-reco">Minha recomendação</h2>
+    <div class="reco">
+      <div class="primeira">
+        <span class="rotulo">1ª escolha</span>
+        <h3>Runas Arcanas com Orbe de mana</h3>
+        <p>É a que mais tem cara de jogo próprio: casa com o nome Magic Block, o Feitiço dá um momento de virada que o jogador decide quando usar, e o visual de cristal lapidado sobre pedra rúnica se destaca numa vitrine de portal. Antes de fechar, a mana precisa encher mais devagar: com o orbe atual o bom jogador dura 2,6 vezes mais que no clássico.</p>
+      </div>
+      <div>
+        <span class="rotulo">2ª escolha</span>
+        <h3>Galáxia com Estrelas cadentes</h3>
+        <p>Visual calmo e bonito, e uma regra só positiva: a estrela avisada guia o olhar e o ×2 recompensa sem punir. Funciona bem para quem quer relaxar, e o bot coletou em média 17 estrelas por partida, então a mecânica aparece o tempo todo.</p>
+      </div>
+      <div>
+        <span class="rotulo">Os outros</span>
+        <h3>Viram mundos desbloqueáveis</h3>
+        <p>Como tema e mecânica são separados, os outros quatro visuais podem entrar no jogo final como mundos liberados por pontuação. As Bombas-relógio servem como um modo desafio à parte. Os Quadrantes do Jardim Zen ficaram fáceis demais e lembram muito o "block sudoku": eu não usaria como regra principal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloco" aria-labelledby="t-nucleo">
+    <h2 id="t-nucleo">O que é igual em todos</h2>
+    <ul class="lista">
+      <li>Formas de 1 a 9 casas (monominó a quadrado 3×3), sorteadas com semente. A cada bandeja nova, pelo menos uma peça cabe quando isso é possível.</li>
+      <li>Pontos: 1 por casa colocada, 10·k² por k linhas limpas juntas (10, 40, 90) e multiplicador da sequência. Três jogadas seguidas sem limpar zeram a sequência.</li>
+      <li>Peça que não cabe em lugar nenhum fica apagada na bandeja. A primeira jogada é ensinada por uma mão animada, sem texto.</li>
+      <li>Arte toda desenhada em código, sons sintetizados na hora (baixos, numa escala que sobe com a sequência). Nenhuma imagem ou áudio de terceiros.</li>
+    </ul>
+  </section>
+
+  <section class="bloco" aria-labelledby="t-clone">
+    <h2 id="t-clone">Por que não é cópia</h2>
+    <ul class="lista">
+      <li>O gênero (encaixar poliminós e limpar linhas) é livre. Nome, arte, sons, pontuação e textos são nossos.</li>
+      <li>Não existe o item de limpar o tabuleiro da referência. No lugar, cada modelo tem uma regra própria que muda a decisão da jogada.</li>
+      <li>Nenhum asset de terceiros. A única peça externa é a fonte Fredoka, sob licença OFL, a mesma dos outros jogos.</li>
+    </ul>
+  </section>
+
+  <section class="bloco" aria-labelledby="t-preciso">
+    <h2 id="t-preciso">O que preciso de você</h2>
+    <ol class="lista">
+      <li>Qual modelo (ou qual combinação de tema e mecânica) vira o jogo. Use <b>Copiar escolha</b> e cole na conversa.</li>
+      <li>O nome final: fica Magic Block ou muda junto com o tema?</li>
+      <li>Para quais portais vai: só californiagames.io ou também Poki e CrazyGames.</li>
+      <li>Qualquer ajuste de visual que já saltou aos olhos (cores, tamanho das peças na bandeja, efeitos).</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+  // Fichas dos modelos (o mesmo conteudo do modelos/README.md).
+  const MECS = ['Clássico (sem extra)', 'Orbe de mana', 'Quadrantes 3×3 (9×9)', 'Linha de um sabor', 'Bombas-relógio', 'Estrelas cadentes', 'Girar a peça'];
+  const MEC_IDS = ['classico', 'mana', 'quadrantes', 'sabores', 'bombas', 'estrelas', 'girar'];
+  const EXTRA = { mana: 'Feitiços usados', sabores: 'linhas de um sabor', bombas: 'bombas que estouraram', estrelas: 'estrelas coletadas' };
+  const MODELOS = [
+    {
+      id: 'runas', nome: 'Runas Arcanas', mec: 1,
+      visual: 'Pedra escura com runas gravadas, cristais lapidados com brilho interno, círculo mágico ao fundo e faíscas subindo. Na limpeza os cristais estilhaçam e a faixa da linha acende.',
+      regra: 'Cada linha limpa enche o orbe, e a sequência enche mais. Cheio, o orbe vira um Feitiço: arraste até qualquer casa e ele limpa a linha e a coluna dela, até por cima de blocos.',
+      novo: 'Um poder que o jogador guarda e decide onde gastar. Salva partidas quase perdidas sem nenhum item comprado.',
+      favor: 'Casa com o nome Magic Block. Visual de jogo comercial. Guardar ou usar o Feitiço dá profundidade.',
+      risco: 'Fica fácil se o orbe encher rápido demais: precisa calibrar. O fundo escuro pede bom contraste em telas baratas.',
+    },
+    {
+      id: 'zen', nome: 'Jardim Zen', mec: 2,
+      visual: 'Areia rastelada, moldura de madeira, pedras de rio lisas e folhas caindo devagar. Na limpeza as pedras afundam na areia com uma ondulação.',
+      regra: 'Tabuleiro 9×9 dividido em 9 quadrantes. Encher um quadrante 3×3 também limpa, além de linhas e colunas.',
+      novo: 'Três jeitos de limpar, num ritmo calmo.',
+      favor: 'Relaxante, conversa com o público adulto, partidas longas.',
+      risco: 'A regra de quadrantes já é conhecida no gênero. Na medição ficou fácil demais: o bom jogador passou de 2.000 jogadas.',
+    },
+    {
+      id: 'doceria', nome: 'Doceria', mec: 3,
+      visual: 'Fundo rosa de bolinhas, bandeja de confeitaria com borda ondulada, gelatinas translúcidas que amassam ao cair, confete e granulado.',
+      regra: 'Cada peça tem um sabor, mostrado pela cor e por um ícone. Linha ou coluna toda de um sabor só vale ×3 e solta uma chuva de confete.',
+      novo: 'Uma meta opcional por cima do encaixe: fechar a linha com um sabor só.',
+      favor: 'Visual fofo, para todas as idades. O ícone resolve a leitura para quem é daltônico.',
+      risco: 'A linha pura é rara (cerca de 2 por partida do bom jogador) e pode passar despercebida. Dá para subir a chance repetindo sabores na bandeja.',
+    },
+    {
+      id: 'neon', nome: 'Neon Arcade', mec: 4,
+      visual: 'Noite synthwave com sol listrado e chão quadriculado andando, tabuleiro de vidro preto com borda neon. A linha limpa vira um laser.',
+      regra: 'A cada 8 peças, uma traz uma bomba com contador de 7 jogadas. Limpe a linha dela antes de zerar. Se zerar, ela vira entulho 3×3 que só sai com linha.',
+      novo: 'Urgência: a prioridade da jogada muda a cada bomba.',
+      favor: 'Tensão e partidas curtas, bom para os intervalos de anúncio. Thumbnail chamativa.',
+      risco: 'Estressa quem procura relaxar. O visual saturado pode cansar em sessões longas.',
+    },
+    {
+      id: 'galaxia', nome: 'Galáxia', mec: 5,
+      visual: 'Espaço profundo com nebulosas, estrelas que piscam e cometas de vez em quando. O tabuleiro é uma janela de nave e os blocos são cristais estelares.',
+      regra: 'A cada 4 jogadas, um círculo tracejado avisa onde uma estrela vai cair, e ela cai na jogada seguinte. Limpar a casa da estrela dá ×2 nas próximas 3 limpezas.',
+      novo: 'Um alvo que muda e guia o olhar. Recompensa sem punição.',
+      favor: 'Bonito e calmo. Regra positiva, fácil de entender só olhando.',
+      risco: 'Menos original sozinha. O ×2 pode parecer só pontuação se o jogador não olhar o placar.',
+    },
+    {
+      id: 'recife', nome: 'Recife', mec: 6,
+      visual: 'Aquário com raios de luz, reflexo cáustico mexendo e bolhas subindo, corais e areia no fundo. Blocos de coral arredondados que viram bolha na limpeza.',
+      regra: 'Um toque na peça da bandeja gira 90°. Em troca, pentominós e formas estranhas aparecem mais.',
+      novo: 'Controle sobre a forma da peça, menos azar no sorteio.',
+      favor: 'Acessível para iniciantes. Diferencial claro: no gênero a peça não gira.',
+      risco: 'Tira parte da tensão do "não cabe". Toque e arrasto precisam ficar bem separados no celular.',
+    },
+  ];
+
+  const semMovimento = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const el = (tag, attrs = {}, ...filhos) => {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') e.className = v;
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v);
+    }
+    for (const f of filhos) if (f !== null && f !== undefined) e.append(f);
+    return e;
+  };
+
+  /** Copia o texto; se a area de transferencia recusar, mostra o texto selecionavel. */
+  function copiar(texto, aviso) {
+    const mostrar = (m) => { aviso.textContent = m; };
+    try {
+      navigator.clipboard.writeText(texto).then(() => mostrar('Copiado: ' + texto), () => mostrar(texto));
+    } catch { mostrar(texto); }
+  }
+
+  let medidas = null;
+  function linhaMedida(m) {
+    const id = MEC_IDS[m.mec];
+    if (!medidas || !medidas.bom[id]) return 'Abra pelo servidor local para ver a medição.';
+    const b = medidas.bom[id];
+    const md = medidas.medio[id];
+    const extra = EXTRA[id] ? ` ${b.extra.toLocaleString('pt-BR')} ${EXTRA[id]} por partida.` : '';
+    return `Bom jogador: ${b.jogadas.toLocaleString('pt-BR')}${b.presas ? '+' : ''} jogadas (cerca de ${b.minutos.toLocaleString('pt-BR')} min). Médio: ${md.jogadas} jogadas (${md.minutos.toLocaleString('pt-BR')} min), limpa em ${md.limpaPct}% das jogadas.${extra}`;
+  }
+
+  function montarFichas() {
+    const raiz = document.getElementById('fichas');
+    raiz.innerHTML = '';
+    MODELOS.forEach((m, k) => {
+      const n = k + 1;
+      const aviso = el('span', { class: 'copiado', 'aria-live': 'polite' });
+      const video = el('video', { src: `prints/${n}-${m.id}.mp4`, poster: `prints/${n}-${m.id}-capa.jpg`, muted: '', loop: '', playsinline: '', preload: 'metadata', 'aria-label': `${m.nome}: o bot jogando` });
+      video.muted = true;
+      // com movimento reduzido fica o poster parado
+      if (!semMovimento) { video.autoplay = true; video.setAttribute('autoplay', ''); }
+      const ficha = el('article', { class: 'ficha', id: 'modelo-' + n },
+        el('div', { class: 'midia' }, video),
+        el('div', { class: 'cabeca' },
+          el('span', { class: 'num' }, `Modelo ${n}`),
+          el('h3', {}, m.nome),
+          el('span', { class: 'mec' }, MECS[m.mec]),
+          el('p', {}, m.regra),
+          el('div', { class: 'acoes' },
+            el('a', { class: 'botao forte', href: `jogar.html#tema=${n}` }, 'Jogar'),
+            el('button', { class: 'botao', type: 'button', onclick: () => copiar(`Escolho o modelo ${n}: ${m.nome} com ${MECS[m.mec]}`, aviso) }, 'Copiar escolha'),
+          ),
+          aviso,
+        ),
+        el('div', { class: 'corpo' },
+          el('div', { class: 'item' }, el('b', {}, 'Visual'), el('span', {}, m.visual)),
+          el('div', { class: 'item' }, el('b', {}, 'O que é novo'), el('span', {}, m.novo)),
+          el('div', { class: 'item favor' }, el('b', {}, 'A favor'), el('span', {}, m.favor)),
+          el('div', { class: 'item risco' }, el('b', {}, 'Risco'), el('span', {}, m.risco)),
+          el('div', { class: 'item' }, el('b', {}, 'Medido'), el('span', { class: 'medido', 'data-mec': String(m.mec) }, linhaMedida(m))),
+          el('details', {},
+            el('summary', {}, 'Ver em paisagem e no desktop'),
+            el('div', { class: 'telas' },
+              el('img', { src: `prints/${n}-${m.id}-paisagem.jpg`, alt: `${m.nome} em paisagem`, loading: 'lazy' }),
+              el('img', { src: `prints/${n}-${m.id}-desktop.jpg`, alt: `${m.nome} no desktop`, loading: 'lazy' }),
+            ),
+          ),
+        ),
+      );
+      raiz.append(ficha);
+    });
+  }
+
+  function montarCombinar() {
+    const st = document.getElementById('sel-tema');
+    const sm = document.getElementById('sel-mec');
+    MODELOS.forEach((m, k) => st.append(el('option', { value: String(k + 1) }, `${k + 1}. ${m.nome}`)));
+    MECS.forEach((nome, k) => sm.append(el('option', { value: String(k) }, nome)));
+    st.value = '3';
+    sm.value = '1';
+    const link = document.getElementById('jogar-comb');
+    const atualizar = () => { link.href = `jogar.html#tema=${st.value}&mec=${sm.value}`; };
+    st.addEventListener('change', atualizar);
+    sm.addEventListener('change', atualizar);
+    atualizar();
+    document.getElementById('copiar-comb').addEventListener('click', () => {
+      copiar(`Escolho o tema ${MODELOS[st.value - 1].nome} com a mecânica ${MECS[sm.value]}`, document.getElementById('ok-comb'));
+    });
+  }
+
+  function montarTabela() {
+    if (!medidas) return;
+    const corpo = document.getElementById('tabela-medidas');
+    corpo.innerHTML = '';
+    MEC_IDS.forEach((id, k) => {
+      const b = medidas.bom[id];
+      const md = medidas.medio[id];
+      if (!b || !md) return;
+      const jb = b.presas ? `${b.jogadas.toLocaleString('pt-BR')}+` : b.jogadas.toLocaleString('pt-BR');
+      corpo.append(el('tr', {},
+        el('td', {}, MECS[k]),
+        el('td', { class: 'n' }, jb),
+        el('td', { class: 'n' }, b.minutos.toLocaleString('pt-BR')),
+        el('td', { class: 'n' }, String(md.jogadas)),
+        el('td', { class: 'n' }, md.minutos.toLocaleString('pt-BR')),
+        el('td', { class: 'n' }, md.limpaPct + '%'),
+        el('td', {}, EXTRA[id] ? `${b.extra.toLocaleString('pt-BR')} ${EXTRA[id]}` : '—'),
+      ));
+    });
+    document.getElementById('medido-nota').textContent =
+      `O bot jogou ${medidas.partidas} partidas de cada mecânica direto no núcleo, sem navegador. "Bom" joga o melhor que sabe; "médio" erra como uma pessoa distraída. Os minutos supõem ${String(medidas.segJogada).replace('.', ',')} s por jogada.`;
+  }
+
+
+  montarFichas();
+  montarCombinar();
+  fetch('medidas.json').then((r) => (r.ok ? r.json() : null)).then((j) => {
+    if (!j) return;
+    medidas = j;
+    for (const s of document.querySelectorAll('.medido')) {
+      s.textContent = linhaMedida(MODELOS.find((m) => String(m.mec) === s.dataset.mec));
+    }
+    montarTabela();
+  }).catch(() => {});
+</script>
+</body>
+</html>

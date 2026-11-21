@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sons do Magic Block</title>
+<style>
+  @font-face { font-family: 'Fredoka'; src: url('../src/ui/fontes/fredoka-latin-700-normal.woff2') format('woff2'); font-weight: 700; }
+  :root { --bg: #0b0d26; --card: #161a44; --fg: #fff; --suave: #b9c6ff; --ouro: #ffd54a; color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; padding: 24px max(16px, env(safe-area-inset-left, 0px)) 40px; }
+  main { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  h1, h2 { font-family: 'Fredoka', system-ui, sans-serif; margin: 0; }
+  p { margin: 0; color: var(--suave); }
+  .grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  button { font: 600 15px system-ui, sans-serif; color: var(--fg); background: var(--card); border: 1px solid #3a4190; border-radius: 12px; padding: 12px; cursor: pointer; text-align: left; }
+  button small { display: block; color: var(--suave); font-weight: 500; }
+  button.tocando { border-color: var(--ouro); }
+  button:focus-visible { outline: 3px solid var(--ouro); }
+  pre { color: var(--suave); white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sons do Magic Block</h1>
+  <p>Todos sintetizados na hora (src/som/galaxia.js e src/som/musica.js), com o mesmo reverb do jogo. Clique para ouvir.</p>
+  <section><h2>Limpeza e combo</h2><div class="grade" id="g-limpeza"></div></section>
+  <section><h2>Jogada</h2><div class="grade" id="g-jogada"></div></section>
+  <section><h2>Estrelas, fim e menus</h2><div class="grade" id="g-outros"></div></section>
+  <section><h2>Música</h2><div class="grade"><button type="button" id="musica">Ligar a música<small>pad em Mi maior e sinos esparsos</small></button></div></section>
+  <pre id="medidas"></pre>
+</main>
+<script type="module">
+  import { criarAudio } from '../src/core/audio.js';
+  import { SONS } from '../src/som/galaxia.js';
+  import { criarMusica } from '../src/som/musica.js';
+
+  const audio = criarAudio();
+  const musica = criarMusica(audio);
+  audio.definirMusica(false);
+  musica.iniciar();
+  const GRUPOS = {
+    'g-limpeza': [
+      ['limpar', { k: 1, seq: 1 }, '1 linha'], ['limpar', { k: 2, seq: 1 }, '2 linhas'], ['limpar', { k: 3, seq: 1 }, '3 linhas (supernova)'],
+      ['limpar', { k: 4, seq: 3 }, '4 linhas, combo x3'], ['limpar', { k: 1, seq: 1, dobro: true }, '1 linha com x2'],
+      ['combo', { seq: 2 }, 'combo x2'], ['combo', { seq: 4 }, 'combo x4'], ['combo', { seq: 6 }, 'combo x6'], ['combo', { seq: 9 }, 'combo x9'],
+      ['perfeito', {}, 'tabuleiro limpo'],
+    ],
+    'g-jogada': [['pegar', {}, 'pegar a peça'], ['girar', { giro: 1 }, 'girar'], ['colocar', { n: 2 }, 'pousar (peça pequena)'], ['colocar', { n: 9 }, 'pousar (peça grande)'], ['recusa', {}, 'soltar fora'], ['bandeja', {}, 'bandeja nova']],
+    'g-outros': [['aviso', {}, 'estrela avisada'], ['estrela', {}, 'estrela caiu'], ['coletou', {}, 'estrela coletada'], ['fim', {}, 'fim de jogo'], ['recorde', {}, 'novo recorde'], ['reviver', {}, 'reviver'], ['botao', {}, 'botão do menu']],
+  };
+  for (const [id, itens] of Object.entries(GRUPOS)) {
+    const g = document.getElementById(id);
+    for (const [nome, p, rotulo] of itens) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = `${rotulo}<small>${nome} ${JSON.stringify(p)}</small>`;
+      b.addEventListener('click', async () => {
+        audio.iniciar();
+        await audio.pronto();
+        const d = audio.tocarReceita(SONS[nome], p, { chave: nome, max: 4 });
+        b.classList.add('tocando');
+        setTimeout(() => b.classList.remove('tocando'), Math.max(200, d * 1000));
+      });
+      g.append(b);
+    }
+  }
+  const bm = document.getElementById('musica');
+  bm.addEventListener('click', () => {
+    audio.iniciar();
+    audio.definirMusica(!audio.musicaLigada);
+    bm.firstChild.textContent = audio.musicaLigada ? 'Desligar a música' : 'Ligar a música';
+  });
+
+  /** Renderiza um som offline com o grafo do jogo (seco + reverb) e mede (tools/sons.mjs). */
+  window.medirSom = async (nome, p = {}, dur = 3) => {
+    const sr = 44100;
+    const ctx = new OfflineAudioContext(2, Math.ceil(sr * dur), sr);
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.2;
+    const mestre = ctx.createGain(); mestre.gain.value = 0.7;
+    comp.connect(mestre); mestre.connect(ctx.destination);
+    const sfx = ctx.createGain(); sfx.gain.value = 0.85; sfx.connect(comp);
+    const d = SONS[nome]({ ctx, destino: sfx }, 0.01, p);
+    const buf = await ctx.startRendering();
+    let pico = 0; let soma = 0; let nan = 0;
+    for (let c = 0; c < 2; c++) {
+      const a = buf.getChannelData(c);
+      for (let i = 0; i < a.length; i++) { const v = a[i]; if (!Number.isFinite(v)) nan++; const x = Math.abs(v); if (x > pico) pico = x; soma += v * v; }
+    }
+    // WAV 16 bits estereo
+    const n = buf.length;
+    const dv = new DataView(new ArrayBuffer(44 + n * 4));
+    const str = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+    str(0, 'RIFF'); dv.setUint32(4, 36 + n * 4, true); str(8, 'WAVE'); str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+    dv.setUint16(22, 2, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * 4, true); dv.setUint16(32, 4, true); dv.setUint16(34, 16, true);
+    str(36, 'data'); dv.setUint32(40, n * 4, true);
+    const L = buf.getChannelData(0); const R = buf.getChannelData(1);
+    for (let i = 0; i < n; i++) { dv.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i])) * 32767, true); dv.setInt16(46 + i * 4, Math.max(-1, Math.min(1, R[i])) * 32767, true); }
+    let bin = ''; const u8 = new Uint8Array(dv.buffer);
+    for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode(...u8.subarray(i, i + 0x8000));
+    return { nome, dur: d, pico, rms: Math.sqrt(soma / (n * 2)), nan, wav: btoa(bin) };
+  };
+</script>
+</body>
+</html>
